@@ -17,6 +17,9 @@ const server = {
     ref: '',
     host: '127.0.0.1',
     port: 3000,
+    hasResponse: false,
+    response: "",
+    checkResponse: () => {return _onServerCheckResponse()},
     onCreate: (t) => {return _onServerCreate(t);},
     onData: (d) => {return _onServerData(d);},
     onClose: () => {}
@@ -90,12 +93,16 @@ function init() {
     _write();
 }
 function _write() {
+
+    server.checkResponse();
+
     process.stdout.write(options.name+"@"+server.host+"> ");
     _getInput().then(d => {
         options.shouldSave && _save(d);
 
         if (!isCMD(d)) {
             client.ref.write(d);
+            server.checkResponse();
             _write();
         }
     });
@@ -141,6 +148,13 @@ function _onServerCreate(t) {
 function _onServerData(data) {
     console.log("daje2", data.toString().trim());
 }
+function _onServerCheckResponse() {
+    if (server.hasResponse) {
+        console.log("response> "+server.response);
+        server.hasResponse = false;
+        server.response = "";
+    }
+}
 
 
 
@@ -167,7 +181,6 @@ function _onClientCreate(t) {
 }
 function _onClientData(data) {
     //process.stdout.write(options.name+"@"+client.host+"> ");
-    process.stdout.write("response> ");
-    console.log(data.toString().trim());
-    //this.write("EDDAJEFORTE");
+    server.hasResponse = true;
+    server.response = data.toString().trim();
 }
