@@ -89,6 +89,8 @@ function init() {
     console.log("====== STARTING ======");
     console.log("");
 
+    console.log(server.ref);
+
     _write();
 }
 function _write() {
@@ -137,7 +139,7 @@ function createServer() {
     });
 }
 function _onServerCreate(t) {
-    server.ref = t;
+    //server.ref = t;
     console.log("test server created");
     //console.log('');
     //console.log('[Log] Server created ' + options.server.host + ':' + options.server.port);
@@ -170,6 +172,7 @@ function _onClientCreate(t) {
     //console.log('[Log] Connected to client ' + client.host + ':' + client.port);
 }
 function _onClientData(data) {
-    console.log("daje", data.toString().trim());
+    console.log(data);
+    (data !== undefined) && console.log("daje", data.toString().trim());
     //this.write("EDDAJEFORTE");
 }
