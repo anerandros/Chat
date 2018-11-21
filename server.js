@@ -15,11 +15,9 @@ net.createServer(function(sock) {
     sock.on('data', function(data) {
  
         console.log('DATA ' + sock.remoteAddress + ': ' + data);
-        
+
         // Rispondiamo al client, il client riceverà questi dati dal server.
-        let response = 'You said '+data;
-        console.log(response);
-        sock.write(response);
+        sock.write(data);
  
     });
  

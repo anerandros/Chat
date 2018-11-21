@@ -4,8 +4,9 @@ var net = require('net');
 
 const options = {
     name: '',
-    shouldSave: false,
-    debug: false
+    debug: false,
+    verbose: true,
+    shouldSave: false
 }
 
 const CMD = [
@@ -17,7 +18,7 @@ const server = {
     host: '127.0.0.1',
     port: 3000,
     onCreate: (t) => {return _onServerCreate(t);},
-    onData: () => {return _onServerData();},
+    onData: (d) => {return _onServerData(d);},
     onClose: () => {}
 }
 
@@ -26,7 +27,7 @@ const client = {
     host: '127.0.0.1',
     port: 6969,
     onCreate: (t) => {return _onClientCreate(t);},
-    onData: () => {return _onClientData();},
+    onData: (d) => {return _onClientData(d);},
     onClose: () => {}
 }
 
@@ -37,17 +38,14 @@ const client = {
 var p = [];
 var initTask = [
     {
-        fn: createServer,
-        cb: [
-            () => {console.log("a1")},
-        ]
-    },
+        fn: createServer
+    },/*
     {
         fn: _getInput,
         cb: [
             (d) => {d => options.name = d}
         ]
-    }/*,
+    },
     {
         fn: _getInput,
         cb: [
@@ -89,8 +87,6 @@ function init() {
     console.log("====== STARTING ======");
     console.log("");
 
-    console.log(server.ref);
-
     _write();
 }
 function _write() {
@@ -130,19 +126,17 @@ function _getInput() {
 
 function createServer() {
     return new Promise((resolve) => {
-        net.createServer(function(sock) {
+        let s = net.createServer(function(sock) {
             sock.on('data', server.onData);
         }).listen(server.port, server.host, () => {
-            server.onCreate(this);
+            server.onCreate(s);
             resolve();
         });
     });
 }
 function _onServerCreate(t) {
-    //server.ref = t;
-    console.log("test server created");
-    //console.log('');
-    //console.log('[Log] Server created ' + options.server.host + ':' + options.server.port);
+    server.ref = t;
+    options.verbose && console.log("[Log] Server created on "+server.host+":"+server.port);
 }
 function _onServerData(data) {
     console.log("daje2", data.toString().trim());
@@ -168,11 +162,12 @@ function connectClient() {
 }
 function _onClientCreate(t) {
     client.ref = t;
-    console.log("test client created");
+    options.verbose && console.log("[Log] Client connected on "+client.host+":"+client.port);
     //console.log('[Log] Connected to client ' + client.host + ':' + client.port);
 }
 function _onClientData(data) {
-    console.log(data);
-    (data !== undefined) && console.log("daje", data.toString().trim());
+    //process.stdout.write(options.name+"@"+client.host+"> ");
+    process.stdout.write("response> ");
+    console.log(data.toString().trim());
     //this.write("EDDAJEFORTE");
 }
