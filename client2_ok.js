@@ -3,7 +3,6 @@
 var net = require('net');
 
 const options = {
-    name: '',
     debug: false,
     verbose: true,
     shouldSave: false
@@ -17,11 +16,12 @@ const server = {
     ref: '',
     host: '127.0.0.1',
     port: 3000,
+    name: "",
     hasResponse: false,
     response: "",
-    checkResponse: () => {return _onServerCheckResponse()},
-    onCreate: (t) => {return _onServerCreate(t);},
-    onData: (d) => {return _onServerData(d);},
+    checkResponse: _onServerCheckResponse,
+    onCreate: _onServerCreate,
+    onData: _onServerData,
     onClose: () => {}
 }
 
@@ -29,14 +29,21 @@ const client = {
     ref: '',
     host: '127.0.0.1',
     port: 6969,
-    onCreate: (t) => {return _onClientCreate(t);},
-    onData: (d) => {return _onClientData(d);},
+    name: "",
+    onCreate: _onClientCreate,
+    onData: _onClientData,
     onClose: () => {}
 }
 
 
+if (process.argv.length !== 3) {
+    console.log("Usage: " + __filename + " SOME_PARAM");
+    process.exit(-1);
+}
 
-
+let argv = process.argv[2].split("@");
+client.name = argv[0];
+client.host = argv[1];
 
 var p = [];
 var initTask = [
@@ -96,7 +103,7 @@ function _write() {
 
     server.checkResponse();
 
-    process.stdout.write(options.name+"@"+server.host+"> ");
+    process.stdout.write(client.name+"@"+server.host+"> ");
     _getInput().then(d => {
         options.shouldSave && _save(d);
 
@@ -180,7 +187,7 @@ function _onClientCreate(t) {
     //console.log('[Log] Connected to client ' + client.host + ':' + client.port);
 }
 function _onClientData(data) {
-    //process.stdout.write(options.name+"@"+client.host+"> ");
+    //process.stdout.write(client.name+"@"+client.host+"> ");
     server.hasResponse = true;
     server.response = data.toString().trim();
 }
