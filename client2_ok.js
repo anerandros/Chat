@@ -18,7 +18,7 @@ const server = {
     port: 3000,
     name: "",
     hasResponse: false,
-    response: "",
+    response: [],
     checkResponse: _onServerCheckResponse,
     onCreate: _onServerCreate,
     onData: _onServerData,
@@ -35,15 +35,6 @@ const client = {
     onClose: () => {}
 }
 
-
-if (process.argv.length !== 3) {
-    console.log("Usage: " + __filename + " SOME_PARAM");
-    process.exit(-1);
-}
-
-let argv = process.argv[2].split("@");
-client.name = argv[0];
-client.host = argv[1];
 
 var p = [];
 var initTask = [
@@ -73,6 +64,16 @@ var initTask = [
 ];
 
 
+if (process.argv.length !== 3) {
+    console.log("Usage: " + __filename + " name@host");
+    process.exit(-1);
+}
+
+let argv = process.argv[2].split("@");
+client.name = argv[0];
+client.host = argv[1];
+
+
 initTask.forEach((obj, i) => {
     p.push(new Promise((resolve) => {
         options.debug && console.log("Executing fn ", i+1);
@@ -97,7 +98,18 @@ function init() {
     console.log("====== STARTING ======");
     console.log("");
 
+    _config();
     _write();
+}
+function _config() {
+    let obj = {
+        'type': 'config',
+        'data': {
+            'name': client.name
+        }
+    }
+
+    client.ref.write(JSON.stringify(obj));
 }
 function _write() {
 
@@ -108,7 +120,14 @@ function _write() {
         options.shouldSave && _save(d);
 
         if (!isCMD(d)) {
-            client.ref.write(d);
+            let obj = {
+                'type': 'message',
+                'data': {
+                    'message': d
+                }
+            }
+
+            client.ref.write(JSON.stringify(obj));
             server.checkResponse();
             _write();
         }
@@ -157,9 +176,15 @@ function _onServerData(data) {
 }
 function _onServerCheckResponse() {
     if (server.hasResponse) {
-        console.log("response> "+server.response);
+        let res = JSON.parse(server.response);
+
+        if (res) {
+            console.log(res.type)
+            console.log("response> "+server.response);
+        }
+
         server.hasResponse = false;
-        server.response = "";
+        server.response = [];
     }
 }
 
@@ -189,5 +214,5 @@ function _onClientCreate(t) {
 function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
     server.hasResponse = true;
-    server.response = data.toString().trim();
+    server.response.push(data.toString().trim());
 }
