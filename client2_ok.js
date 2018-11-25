@@ -178,13 +178,24 @@ function _onServerCheckResponse() {
     if (server.hasResponse) {
         let res = JSON.parse(server.response);
 
-        if (res) {
-            console.log(res.type)
-            console.log("response> "+server.response);
+        /*
+        switch(res.type) {
+            case 'config':
+                // imposta server name;
+                break;
+            case 'message':
+                // giro classico
+                break;
+            default:
+                // boh?
+                break;
         }
+        */
+
+        console.log("response> "+res.data.message);
 
         server.hasResponse = false;
-        server.response = [];
+        server.response = "";
     }
 }
 
@@ -214,5 +225,5 @@ function _onClientCreate(t) {
 function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
     server.hasResponse = true;
-    server.response.push(data.toString().trim());
+    server.response = data.toString().trim();
 }
