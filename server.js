@@ -25,6 +25,14 @@ net.createServer(function(sock) {
     sock.on('close', function(data) {
         console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
     });
+
+    // Handling errors
+    sock.on('error', function(e) {
+        switch(e.code) {
+            case 'ECONNRESET':
+                break;
+        }
+    })
  
 }).listen(PORT, HOST);
  

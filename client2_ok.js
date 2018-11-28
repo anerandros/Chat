@@ -22,6 +22,7 @@ const server = {
     checkResponse: _onServerCheckResponse,
     onCreate: _onServerCreate,
     onData: _onServerData,
+    onError: () => {},
     onClose: () => {}
 }
 
@@ -32,6 +33,7 @@ const client = {
     name: "",
     onCreate: _onClientCreate,
     onData: _onClientData,
+    onError: _onClientError,
     onClose: () => {}
 }
 
@@ -161,6 +163,12 @@ function createServer() {
     return new Promise((resolve) => {
         let s = net.createServer(function(sock) {
             sock.on('data', server.onData);
+            sock.on('data', function(e) {
+                console.log("OPS")
+                console.log("OPS")
+                console.log("OPS")
+                console.log("OPS")
+            });
         }).listen(server.port, server.host, () => {
             server.onCreate(s);
             resolve();
@@ -178,21 +186,14 @@ function _onServerCheckResponse() {
     if (server.hasResponse) {
         let res = JSON.parse(server.response);
 
-        /*
         switch(res.type) {
             case 'config':
-                // imposta server name;
+                server.name = res.data.name;
                 break;
             case 'message':
-                // giro classico
-                break;
-            default:
-                // boh?
+                console.log("response> "+res.data.message);
                 break;
         }
-        */
-
-        console.log("response> "+res.data.message);
 
         server.hasResponse = false;
         server.response = "";
@@ -208,6 +209,7 @@ function connectClient() {
         var c = new net.Socket();
 
         c.on('data', client.onData);
+        c.on('error', client.onError);
         c.on('close', client.onClose);
 
         c.connect(client.port, client.host, function() {
@@ -226,4 +228,16 @@ function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
     server.hasResponse = true;
     server.response = data.toString().trim();
+}
+function _onClientError(e) {
+    switch(e.code) {
+        case 'ECONNRESET':
+            break;
+        case 'ECONNREFUSED':
+            console.log("[ERROR] Cannot connect to client. Retrying in %ds ...", 5);
+            setTimeout(function() {
+                connectClient();
+            }, 5000);
+            break;
+    }
 }
