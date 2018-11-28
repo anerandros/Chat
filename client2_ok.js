@@ -5,7 +5,9 @@ var net = require('net');
 const options = {
     debug: false,
     verbose: true,
-    shouldSave: false
+    shouldSave: false,
+    retries: 0,
+    waitTime: 1
 }
 
 const CMD = [
@@ -84,6 +86,7 @@ initTask.forEach((obj, i) => {
                 options.debug && console.log("Executing cb ", i+1, j+1);
                 typeof cb === 'function' && cb(d);
             });
+            console.log("DAJE");
             resolve();
         });
     }));
@@ -234,10 +237,11 @@ function _onClientError(e) {
         case 'ECONNRESET':
             break;
         case 'ECONNREFUSED':
-            console.log("[ERROR] Cannot connect to client. Retrying in %ds ...", 5);
+            options.retries++;
+            console.log("[ERROR] Cannot connect to client. Retrying in %ds ...", options.waitTime*options.retries);
             setTimeout(function() {
                 connectClient();
-            }, 5000);
+            }, options.waitTime*options.retries*1000);
             break;
     }
 }
