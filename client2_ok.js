@@ -17,7 +17,7 @@ const CMD = [
 
 const server = {
     ref: '',
-    host: '127.0.0.1',
+    host: '',
     port: 3000,
     name: "",
     isConfigured: false,
@@ -45,24 +45,7 @@ var p = [];
 var initTask = [
     {
         fn: createServer
-    },/*
-    {
-        fn: _getInput,
-        cb: [
-            (d) => {d => options.name = d}
-        ]
     },
-    {
-        fn: _getInput,
-        cb: [
-            (d) => {
-                //client.host = d;
-                client.host = '127.0.0.1';
-            }
-        ]
-    }
-    */
-    ,
     {
         fn: connectClient
     }
@@ -132,9 +115,7 @@ function _write() {
             }
 
             client.ref.write(JSON.stringify(obj));
-
             setTimeout(_write, 200);
-            
         }
     });
 }
@@ -143,6 +124,7 @@ function isCMD(d) {
         for (let prop in obj) {
             if (prop == d) {
                 console.log("TROVATO COMANDO; eseguo ", obj[prop]);
+                //obj[prop]();
                 return true;
             }
         }
@@ -196,6 +178,7 @@ function _onServerInitialConfig(resObj) {
 
 
 
+
 function connectClient() {
     return new Promise((resolve) => {
         var c = new net.Socket();
@@ -221,6 +204,7 @@ function _onClientData(data) {
 
     server.hasResponse = true;
     server.response = res;
+    //server.response.push(res);
 
     _renderResponse();
 }
@@ -235,7 +219,6 @@ function _onClientError(e) {
             break;
     }
 }
-
 function _renderResponse() {
     if (server.hasResponse) {
         let res = server.response;
@@ -251,6 +234,6 @@ function _renderResponse() {
         }
 
         server.hasResponse = false;
-        server.response = "";
+        server.response = [];
     }
 }
