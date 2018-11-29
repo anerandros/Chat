@@ -2,8 +2,6 @@ var net = require('net');
  
 var HOST = '127.0.0.1';
 var PORT = 6969;
-
-var configured = false;
 // Creaiamo un istanza del server, e concateniamo la funzione listen
 // La funzione passata a net.createServer() diventerà l'event handler per l'evento 'connection'
 // l'oggetto sock che la callback prende come parametro è univoco per ogni connessione.
@@ -14,8 +12,9 @@ net.createServer(function(sock) {
  
     // Aggiungiamo l'event handler 'data' per questa instanza di socket
     sock.on('data', function(data) {
- 
-        if (!configured) {
+        data = JSON.parse(data);
+
+        if (data.type == 'config') {
             let obj = {
                 'type': 'config',
                 'data': {
@@ -24,12 +23,18 @@ net.createServer(function(sock) {
             }
             console.log("Configured");
             sock.write(JSON.stringify(obj));
-            configured = true;
         } else {
-            console.log('DATA ' + sock.remoteAddress + ': ' + data);
+
+            let obj = {
+                'type': 'message',
+                'data': {
+                    'message': data.data.message
+                }
+            }
 
             // Rispondiamo al client, il client riceverà questi dati dal server.
-            sock.write(data);
+            sock.write(JSON.stringify(obj));
+            console.log('DATA ' + sock.remoteAddress + ': ' + data.data.message);
         }
  
     });

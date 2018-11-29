@@ -1,6 +1,7 @@
 //import server from 'server/server.js';
 //import client from 'client/client.js';
 var net = require('net');
+var readline = require('readline');
 
 const options = {
     debug: false,
@@ -19,12 +20,12 @@ const server = {
     host: '127.0.0.1',
     port: 3000,
     name: "",
+    isConfigured: false,
     hasResponse: false,
     response: [],
-    checkResponse: _onServerCheckResponse,
     onCreate: _onServerCreate,
     onData: _onServerData,
-    onError: () => {},
+    onError: _onServerError,
     onClose: () => {}
 }
 
@@ -116,10 +117,9 @@ function _config() {
     client.ref.write(JSON.stringify(obj));
 }
 function _write() {
-
-    server.checkResponse();
-
+    readline.cursorTo(process.stdout, 0);
     process.stdout.write(client.name+"@"+server.host+"> ");
+
     _getInput().then(d => {
         options.shouldSave && _save(d);
 
@@ -132,7 +132,7 @@ function _write() {
             }
 
             client.ref.write(JSON.stringify(obj));
-            server.checkResponse();
+
             _write();
         }
     });
@@ -165,12 +165,7 @@ function createServer() {
     return new Promise((resolve) => {
         let s = net.createServer(function(sock) {
             sock.on('data', server.onData);
-            sock.on('error', function(e) {
-                console.log("OPS")
-                console.log("OPS")
-                console.log("OPS")
-                console.log("OPS")
-            });
+            sock.on('error', server.onError);
         }).listen(server.port, server.host, () => {
             server.onCreate(s);
             resolve();
@@ -184,26 +179,16 @@ function _onServerCreate(t) {
 function _onServerData(data) {
     console.log("daje2", data.toString().trim());
 }
-function _onServerCheckResponse() {
-    if (server.hasResponse) {
-        let res = JSON.parse(server.response);
-
-        switch(res.type) {
-            case 'config':
-                _onServerInitialConfig(res);
-                break;
-            case 'message':
-                console.log("\r\n"+server.name+"@"+server.host+"> "+res.data.message+"\n");
-                break;
-        }
-
-        server.hasResponse = false;
-        server.response = "";
+function _onServerError(e) {
+    switch(e.code) {
+        case 'ECONNRESET':
+            break;
+        case 'ECONNREFUSED':
+            break;
     }
 }
 function _onServerInitialConfig(resObj) {
     server.name = resObj.data.name;
-    //console.log("Configured with ", server.name);
 }
 
 
@@ -231,8 +216,12 @@ function _onClientCreate(t) {
 }
 function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
+    let res = JSON.parse(data.toString().trim());
+
     server.hasResponse = true;
-    server.response = data.toString().trim();
+    server.response = res;
+
+    _renderResponse();
 }
 function _onClientError(e) {
     switch(e.code) {
@@ -241,9 +230,26 @@ function _onClientError(e) {
         case 'ECONNREFUSED':
             options.retries++;
             console.log("[ERROR] Cannot connect to client. Retrying in %ds ...", options.waitTime*options.retries);
-            setTimeout(function() {
-                connectClient();
-            }, options.waitTime*options.retries*1000);
+            setTimeout(connectClient, options.waitTime*options.retries*1000);
             break;
+    }
+}
+
+function _renderResponse() {
+    if (server.hasResponse) {
+        let res = server.response;
+
+        switch(res.type) {
+            case 'config':
+                _onServerInitialConfig(res);
+                break;
+            case 'message':
+                readline.cursorTo(process.stdout, 0);
+                console.log(server.name+"@"+server.host+"> "+res.data.message);
+                break;
+        }
+
+        server.hasResponse = false;
+        server.response = "";
     }
 }
