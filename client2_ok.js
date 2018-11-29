@@ -86,7 +86,6 @@ initTask.forEach((obj, i) => {
                 options.debug && console.log("Executing cb ", i+1, j+1);
                 typeof cb === 'function' && cb(d);
             });
-            console.log("DAJE");
             resolve();
         });
     }));
@@ -166,7 +165,7 @@ function createServer() {
     return new Promise((resolve) => {
         let s = net.createServer(function(sock) {
             sock.on('data', server.onData);
-            sock.on('data', function(e) {
+            sock.on('error', function(e) {
                 console.log("OPS")
                 console.log("OPS")
                 console.log("OPS")
@@ -191,16 +190,20 @@ function _onServerCheckResponse() {
 
         switch(res.type) {
             case 'config':
-                server.name = res.data.name;
+                _onServerInitialConfig(res);
                 break;
             case 'message':
-                console.log("response> "+res.data.message);
+                console.log("\r\n"+server.name+"@"+server.host+"> "+res.data.message+"\n");
                 break;
         }
 
         server.hasResponse = false;
         server.response = "";
     }
+}
+function _onServerInitialConfig(resObj) {
+    server.name = resObj.data.name;
+    //console.log("Configured with ", server.name);
 }
 
 
@@ -225,7 +228,6 @@ function connectClient() {
 function _onClientCreate(t) {
     client.ref = t;
     options.verbose && console.log("[Log] Client connected on "+client.host+":"+client.port);
-    //console.log('[Log] Connected to client ' + client.host + ':' + client.port);
 }
 function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
