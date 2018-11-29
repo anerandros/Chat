@@ -118,7 +118,7 @@ function _config() {
 }
 function _write() {
     readline.cursorTo(process.stdout, 0);
-    process.stdout.write(client.name+"@"+server.host+"> ");
+    process.stdout.write(client.name+"@"+client.host+"> ");
 
     _getInput().then(d => {
         options.shouldSave && _save(d);
@@ -133,7 +133,8 @@ function _write() {
 
             client.ref.write(JSON.stringify(obj));
 
-            _write();
+            setTimeout(_write, 200);
+            
         }
     });
 }
