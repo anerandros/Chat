@@ -15,9 +15,10 @@ const CMD = [
     {exit: 'exit'}
 ]
 
+// server.ref deve diventare l'ip della macchina;
 const server = {
     ref: '',
-    host: '',
+    host: '127.0.0.1',
     port: 3000,
     name: "",
     isConfigured: false,
@@ -31,7 +32,7 @@ const server = {
 
 const client = {
     ref: '',
-    host: '127.0.0.1',
+    host: '',
     port: 6969,
     name: "",
     onCreate: _onClientCreate,
@@ -44,9 +45,11 @@ const client = {
 var p = [];
 var initTask = [
     {
+        name: 'createServer',
         fn: createServer
     },
     {
+        name: 'connectClient',
         fn: connectClient
     }
 ];
@@ -61,9 +64,23 @@ let argv = process.argv[2].split("@");
 client.name = argv[0];
 client.host = argv[1];
 
-
+let ref;
 initTask.forEach((obj, i) => {
+    /*
     p.push(new Promise((resolve) => {
+        options.debug && console.log("Executing fn ", i+1);
+        obj['fn'] && typeof obj['fn'] === 'function' && obj['fn']().then(d => {
+            obj['cb'] && obj['cb'].forEach((cb, j) => {
+                options.debug && console.log("Executing cb ", i+1, j+1);
+                typeof cb === 'function' && cb(d);
+            });
+            console.log("OOOOOOOOOOK!");
+            resolve();
+        });
+    }));
+    */
+
+    ref = new Promise((resolve) => {
         options.debug && console.log("Executing fn ", i+1);
         obj['fn'] && typeof obj['fn'] === 'function' && obj['fn']().then(d => {
             obj['cb'] && obj['cb'].forEach((cb, j) => {
@@ -72,13 +89,31 @@ initTask.forEach((obj, i) => {
             });
             resolve();
         });
-    }));
+    });
+
+    p.push(ref);
 });
+delete ref;
+
+let done = false;
 
 Promise.all(p).then ( _ => {
+    done = true;
+    //delete p;
     console.log("[Log] Init tasks completed");
     init();
 });
+
+setInterval(() => {
+    if (!done) {
+        Promise.all(p).then ( _ => {
+            done = true;
+            //delete p;
+            console.log("[Log] Init tasks completed");
+            init();
+        });
+    }
+})
 
 
 function init() {
@@ -197,6 +232,10 @@ function connectClient() {
 function _onClientCreate(t) {
     client.ref = t;
     options.verbose && console.log("[Log] Client connected on "+client.host+":"+client.port);
+
+    p = p.map((obj, i) => {
+        return Promise.resolve();
+    });
 }
 function _onClientData(data) {
     //process.stdout.write(client.name+"@"+client.host+"> ");
