@@ -2,6 +2,7 @@
 //import client from 'client/client.js';
 var net = require('net');
 var readline = require('readline');
+var ip = require('ip');
 
 const options = {
     debug: false,
@@ -15,10 +16,9 @@ const CMD = [
     {exit: 'exit'}
 ]
 
-// server.ref deve diventare l'ip della macchina;
 const server = {
     ref: '',
-    host: '127.0.0.1',
+    host: ip.address(),
     port: 3000,
     name: "",
     isConfigured: false,
@@ -74,7 +74,6 @@ initTask.forEach((obj, i) => {
                 options.debug && console.log("Executing cb ", i+1, j+1);
                 typeof cb === 'function' && cb(d);
             });
-            console.log("OOOOOOOOOOK!");
             resolve();
         });
     }));
