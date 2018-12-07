@@ -1,8 +1,9 @@
 //import server from 'server/server.js';
 //import client from 'client/client.js';
-var net = require('net');
-var readline = require('readline');
-var ip = require('ip');
+const net = require('net');
+const readline = require('readline');
+const ip = require('ip');
+const EventEmitter = require('events');
 
 const options = {
     debug: false,
@@ -24,6 +25,7 @@ const server = {
     isConfigured: false,
     hasResponse: false,
     response: [],
+    event: new EventEmitter(),
     onCreate: _onServerCreate,
     onData: _onServerData,
     onError: _onServerError,
@@ -35,6 +37,7 @@ const client = {
     host: '',
     port: 6969,
     name: "",
+    event: new EventEmitter(),
     onCreate: _onClientCreate,
     onData: _onClientData,
     onError: _onClientError,
@@ -64,9 +67,7 @@ let argv = process.argv[2].split("@");
 client.name = argv[0];
 client.host = argv[1];
 
-let ref;
 initTask.forEach((obj, i) => {
-    /*
     p.push(new Promise((resolve) => {
         options.debug && console.log("Executing fn ", i+1);
         obj['fn'] && typeof obj['fn'] === 'function' && obj['fn']().then(d => {
@@ -77,42 +78,23 @@ initTask.forEach((obj, i) => {
             resolve();
         });
     }));
-    */
+});
 
-    ref = new Promise((resolve) => {
-        options.debug && console.log("Executing fn ", i+1);
-        obj['fn'] && typeof obj['fn'] === 'function' && obj['fn']().then(d => {
-            obj['cb'] && obj['cb'].forEach((cb, j) => {
-                options.debug && console.log("Executing cb ", i+1, j+1);
-                typeof cb === 'function' && cb(d);
-            });
-            resolve();
-        });
+
+let isInit = false;
+function initWorkflow() {
+    Promise.all(p).then ( _ => {
+        isInit = true;
+        delete p;
+
+        console.log("[Log] Init tasks completed");
+        init();
     });
-
-    p.push(ref);
-});
-delete ref;
-
-let done = false;
-
-Promise.all(p).then ( _ => {
-    done = true;
-    //delete p;
-    console.log("[Log] Init tasks completed");
-    init();
-});
+}
 
 setInterval(() => {
-    if (!done) {
-        Promise.all(p).then ( _ => {
-            done = true;
-            //delete p;
-            console.log("[Log] Init tasks completed");
-            init();
-        });
-    }
-})
+    !isInit ? initWorkflow() : null;
+}, 1000);
 
 
 function init() {
@@ -249,6 +231,7 @@ function _onClientData(data) {
 function _onClientError(e) {
     switch(e.code) {
         case 'ECONNRESET':
+            console.log("\n\n[Log] [ECONNRESET] Connessione chiusa o persa");
             break;
         case 'ECONNREFUSED':
             options.retries++;
