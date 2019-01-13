@@ -86,6 +86,7 @@ function initWorkflow() {
     Promise.all(p).then ( _ => {
         isInit = true;
         delete p;
+        delete initTask;
 
         console.log("[Log] Init tasks completed");
         init();
@@ -155,6 +156,7 @@ function _getInput() {
         });
     })
 }
+
 
 
 
